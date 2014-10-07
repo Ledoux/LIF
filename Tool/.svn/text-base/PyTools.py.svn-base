@@ -1,0 +1,159 @@
+###LOAD PACKAGES###
+from pylab import *
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
+import itertools
+
+def arg(z):
+	return 2.*np.arctan(np.imag(z)/(np.sqrt(np.imag(z)**2+np.real(z)**2)+np.real(z)));
+
+def combi(k,n):
+	if(k<=n):
+		return math.factorial(n)/(math.factorial(n-k)*math.factorial(k));
+	else:
+		return 0;
+
+def getCombi(stuff):
+	subsubsubset=list();
+	for L in range(0, len(stuff)+1):
+		subsubset=list();
+		for subset in itertools.combinations(stuff, L):
+			subsubset.append(subset);
+		subsubsubset.append(subsubset);
+	return subsubsubset;
+
+def write2D(data,fname):
+	output = open(fname, 'wb');
+	dim=shape(data);
+	j=0;
+	for z in range(0,dim[0]):
+		k=0;
+		for y in range(0,dim[1]):
+			output.write('%.3f ' %data[j,k]);
+			k=k+1;	
+		output.write('\n');	
+		j=j+1;	
+	output.close();
+
+def read2D(fname):
+	a=open(fname,'r');
+	data=list();
+	li=a.readline().rsplit(' ');
+	while len(li) > 1 :
+		data.append(array(li)[array(range(0,len(li)-1))]);
+		li=a.readline().rsplit(' ');
+	return array(data)
+
+def getContour2(X,Y,ech):
+	x0, y0 = np.mean(X), np.mean(Y);print(x0,y0);
+	C = (X - x0) + 1j * (Y - y0);
+	angles = np.angle(C);
+	distances = np.absolute(C);
+	sortidDist = [i[0] for i in sorted(enumerate(distances), key=lambda x:x[1],reverse=True)]
+	anglesDist = angles[ sortidDist ][range(0,ech)];
+	distancesDist = distances[ sortidDist ][range(0,ech)];
+	XDist=X[ sortidDist ][range(0,ech)];
+	YDist=Y[ sortidDist ][range(0,ech)];
+	sortidAng = [i[0] for i in sorted(enumerate(anglesDist), key=lambda x:x[1],reverse=True)]
+	anglesAng = anglesDist[ sortidAng];
+	distancesAng = distancesDist[ sortidAng ];
+	XAng=XDist[ sortidAng ];
+	YAng=YDist[ sortidAng ];
+	return XAng,YAng;
+
+def getColor(nColors):
+	jet = cm = plt.get_cmap('jet');
+	cNorm  = colors.Normalize(vmin=0, vmax=nColors);
+	scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet);
+	return [scalarMap.to_rgba(i) for i in range(0,nColors)];
+
+def getContour(X,Y,nEch):
+	x0, y0 = np.mean(X), np.mean(Y);
+	C = (X - x0) + 1j * (Y - y0);
+	angles = arg(C);
+	sortAng=[i[0] for i in sorted(enumerate(angles), key=lambda x:x[1])];
+	anglesSort=angles[sortAng];
+	CSort=C[sortAng];
+	scanAng=arange(-pi,pi+2*pi/float(nEch),2*pi/float(nEch));
+	CCont=list();
+	#colorRange=getColor(len(scanAng));
+	#colorRange=list();
+	colorSet=list();
+	CScan=[list() for i in range(0,len(scanAng))];
+	who=[list() for i in range(0,len(scanAng))];
+	whoMax=list();
+	count=0;
+	for i in range(0,len(scanAng)):
+		ang=scanAng[i];
+		#colorSet.append(colorRange[i]);
+		if i%2==0:
+			colorSet.append("black");
+		else:
+			colorSet.append("red");
+		while count<len(anglesSort) and anglesSort[count]<ang:
+			who[i].append(sortAng[count]);
+			CScan[i].append(CSort[count]);
+			count+=1;
+		if len(CScan[i])>0:
+			distances=np.absolute(array(CScan[i]));
+			whereMax=where((distances)==max(distances))[0][0];
+			whoMax.append(who[i][whereMax]);
+			CCont.append(distances[whereMax]*np.exp(1j*np.angle(CScan[i][whereMax])));
+	CCont.append(CCont[0]);
+	CCont=array(CCont);
+
+				
+	return x0+real(CCont),y0+imag(CCont),[x0+real(CScan[i]) for i in range(0,len(scanAng))],[y0+imag(CScan[i]) for i in range(0,len(scanAng))],colorSet,whoMax;
+
+
+def getContour3(X,Y,x0,y0,minTheta,maxTheta,nEch):
+	C = (X - x0) + 1j * (Y - y0);
+	angles = arg(C);
+	sortAng=[i[0] for i in sorted(enumerate(angles), key=lambda x:x[1])];
+	anglesSort=angles[sortAng];
+	CSort=C[sortAng];
+	deltaTheta=maxTheta-minTheta;
+	scanAng=arange(minTheta,maxTheta+(deltaTheta/float(nEch)),deltaTheta/float(nEch));
+	CCont=list();
+	#colorRange=getColor(len(scanAng));
+	#colorRange=list();
+	colorSet=list();
+	CScan=[list() for i in range(0,len(scanAng))];
+	who=[list() for i in range(0,len(scanAng))];
+	whoMax=list();
+	count=0;
+	for i in range(0,len(scanAng)):
+		ang=scanAng[i];
+		#colorSet.append(colorRange[i]);
+		if i%2==0:
+			colorSet.append("black");
+		else:
+			colorSet.append("red");
+		while count<len(anglesSort) and anglesSort[count]<ang:
+			who[i].append(sortAng[count]);
+			CScan[i].append(CSort[count]);
+			count+=1;
+		if len(CScan[i])>0:
+			distances=np.absolute(array(CScan[i]));
+			whereMax=where((distances)==max(distances))[0][0];
+			whoMax.append(who[i][whereMax]);
+			CCont.append(distances[whereMax]*np.exp(1j*np.angle(CScan[i][whereMax])));
+	CCont.append(CCont[0]);
+	CCont=array(CCont);
+	
+	
+	return x0+real(CCont),y0+imag(CCont),[x0+real(CScan[i]) for i in range(0,len(scanAng))],[y0+imag(CScan[i]) for i in range(0,len(scanAng))],colorSet,whoMax;
+
+
+def getFirstNonZeroValues(number):
+	decimal=0.;
+	if number>0.:
+		while number<1.:
+			number=10.*number;
+			decimal+=1;
+		return number,decimal
+	else:
+		return 0.,-1
+
+
+
